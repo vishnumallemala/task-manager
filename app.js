@@ -11,8 +11,7 @@ app.use(express.urlencoded({ extended: true }));
 app.get("/tasks", (req, res) => {
   let tasks = taskData.tasks;
   if (req.query.completed && req.query.completed !== "") {
-    let filteredTasks;
-    filteredTasks = tasks.filter(
+    let filteredTasks = tasks.filter(
       (task) =>
         task.completed == (req.query.completed.toLocaleLowerCase() == "true")
     );
