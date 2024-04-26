@@ -9,7 +9,31 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 app.get("/tasks", (req, res) => {
-  res.status(200).send(taskData.tasks);
+  let tasks = taskData.tasks;
+  if (req.query.completed && req.query.completed !== "") {
+    let filteredTasks;
+    filteredTasks = tasks.filter(
+      (task) =>
+        task.completed == (req.query.completed.toLocaleLowerCase() == "true")
+    );
+
+    if (filteredTasks.length !== 0) {
+      if (req.query.sort.toLocaleLowerCase() == "desc") {
+        filteredTasks = filteredTasks.sort(
+          (a, b) => new Date(b.createdOn) - new Date(a.createdOn)
+        );
+      } else {
+        filteredTasks = filteredTasks.sort(
+          (a, b) => new Date(a.createdOn) - new Date(b.createdOn)
+        );
+      }
+      return res.status(200).send(filteredTasks);
+    }
+    return res
+      .status(404)
+      .send("There are no taks present with the input completion status");
+  }
+  return res.status(200).send(taskData.tasks);
 });
 
 app.get("/tasks/:id", (req, res) => {
@@ -23,11 +47,24 @@ app.get("/tasks/:id", (req, res) => {
   res.status(200).send(filteredTask[0]);
 });
 
+app.get("/tasks/priority/:level", (req, res) => {
+  let tasks = taskData.tasks;
+  let filteredTasks = tasks.filter((task) => task.priority == req.params.level);
+  if (filteredTasks.length === 0) {
+    return res
+      .status(404)
+      .send("There are no tasks present with the input priority level");
+  }
+  return res.status(200).send(filteredTasks);
+});
+
 app.post("/tasks", (req, res) => {
   const taskInfo = req.body;
   let modifiedTaskData = taskData;
   taskInfo["id"] =
     modifiedTaskData.tasks[modifiedTaskData.tasks.length - 1].id + 1;
+  taskInfo.priority = taskInfo.priority ? taskInfo.priority : "low";
+  taskInfo.createdOn = new Date().toJSON();
   if (Validator.validateTaskInfo(taskInfo).status === true) {
     modifiedTaskData.tasks.push(taskInfo);
     // fs.writeFile(
